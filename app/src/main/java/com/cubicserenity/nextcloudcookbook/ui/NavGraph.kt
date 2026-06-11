@@ -111,6 +111,7 @@ private fun MainShell(
             )
             Tab.PLANNER -> MealPlannerScreen(
                 modifier = Modifier.padding(padding),
+                onRecipeClick = onRecipeClick,
             )
             Tab.SHOPPING -> ShoppingScreen(
                 modifier = Modifier.padding(padding),

@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -26,11 +27,13 @@ import java.util.Locale
 
 private val ISO = DateTimeFormatter.ISO_LOCAL_DATE
 private val SHORT_DATE = DateTimeFormatter.ofPattern("d MMM")
+private val DAY_NUM = DateTimeFormatter.ofPattern("d")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealPlannerScreen(
     modifier: Modifier = Modifier,
+    onRecipeClick: (Int) -> Unit = {},
     viewModel: MealPlannerViewModel = hiltViewModel(),
 ) {
     val weekStart by viewModel.weekStart.collectAsStateWithLifecycle()
@@ -39,9 +42,11 @@ fun MealPlannerScreen(
 
     var pickerState by remember { mutableStateOf<Pair<LocalDate, String>?>(null) }
 
+    val today = LocalDate.now()
     val days = (0..6).map { weekStart.plusDays(it.toLong()) }
     val endDate = weekStart.plusDays(6)
     val weekLabel = "${weekStart.format(SHORT_DATE)} – ${endDate.format(SHORT_DATE)} ${endDate.year}"
+    val entryMap = remember(entries) { entries.associateBy { it.date to it.meal } }
 
     Scaffold(
         modifier = modifier,
@@ -64,47 +69,54 @@ fun MealPlannerScreen(
             }
             HorizontalDivider()
 
-            // Scrollable week grid
-            val today = LocalDate.now()
-            Row(
-                Modifier.fillMaxSize().horizontalScroll(rememberScrollState()),
+            // Scrollable week grid (vertical + horizontal)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
             ) {
-                days.forEach { day ->
-                    val isToday = day == today
-                    Column(
-                        modifier = Modifier.width(140.dp).padding(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        // Day header
-                        Surface(
-                            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.small,
-                            modifier = Modifier.fillMaxWidth(),
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                ) {
+                    days.forEach { day ->
+                        val isToday = day == today
+                        Column(
+                            modifier = Modifier.width(140.dp).padding(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Text(
-                                    day.format(DateTimeFormatter.ofPattern("d")),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            // Day header
+                            Surface(
+                                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        day.format(DAY_NUM),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                            // Meal slots
+                            MEALS.forEach { meal ->
+                                val entry = entryMap[day.format(ISO) to meal]
+                                MealSlot(
+                                    meal = meal,
+                                    entry = entry?.recipeName,
+                                    recipeId = entry?.recipeId,
+                                    imageUrl = entry?.let { viewModel.thumbnailUrl(it.recipeId) },
+                                    onAssign = { pickerState = day to meal },
+                                    onClear = { viewModel.clear(day, meal) },
+                                    onRecipeClick = onRecipeClick,
                                 )
                             }
-                        }
-                        // Meal slots
-                        MEALS.forEach { meal ->
-                            val entry = entries.find { it.date == day.format(ISO) && it.meal == meal }
-                            MealSlot(
-                                meal = meal,
-                                entry = entry?.recipeName,
-                                imageUrl = entry?.let { viewModel.thumbnailUrl(it.recipeId) },
-                                onAssign = { pickerState = day to meal },
-                                onClear = { viewModel.clear(day, meal) },
-                            )
                         }
                     }
                 }
@@ -130,13 +142,18 @@ fun MealPlannerScreen(
 private fun MealSlot(
     meal: String,
     entry: String?,
+    recipeId: Int?,
     imageUrl: String?,
     onAssign: () -> Unit,
     onClear: () -> Unit,
+    onRecipeClick: (Int) -> Unit,
 ) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 70.dp)) {
+    ElevatedCard(
+        onClick = { recipeId?.let(onRecipeClick) },
+        modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 70.dp),
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            if (entry != null && imageUrl != null) {
+            if (imageUrl != null) {
                 AsyncImage(
                     model = imageUrl,
                     contentDescription = entry,
@@ -211,4 +228,3 @@ private fun RecipePickerDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
-
