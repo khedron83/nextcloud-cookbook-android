@@ -11,11 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.cubicserenity.nextcloudcookbook.domain.model.RecipeSummary
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -99,6 +101,7 @@ fun MealPlannerScreen(
                             MealSlot(
                                 meal = meal,
                                 entry = entry?.recipeName,
+                                imageUrl = entry?.let { viewModel.thumbnailUrl(it.recipeId) },
                                 onAssign = { pickerState = day to meal },
                                 onClear = { viewModel.clear(day, meal) },
                             )
@@ -127,27 +130,38 @@ fun MealPlannerScreen(
 private fun MealSlot(
     meal: String,
     entry: String?,
+    imageUrl: String?,
     onAssign: () -> Unit,
     onClear: () -> Unit,
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 70.dp)) {
-        Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(meal, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
-            if (entry != null) {
-                Text(entry, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (entry != null && imageUrl != null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = entry,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().height(72.dp),
+                )
+            }
+            Column(Modifier.padding(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(meal, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+                if (entry != null) {
+                    Text(entry, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        TextButton(onClick = onAssign, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
+                            Text("Change", style = MaterialTheme.typography.labelSmall)
+                        }
+                        IconButton(onClick = onClear, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Default.Close, "Remove", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                } else {
                     TextButton(onClick = onAssign, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
-                        Text("Change", style = MaterialTheme.typography.labelSmall)
+                        Icon(Icons.Default.Add, null, Modifier.size(14.dp))
+                        Spacer(Modifier.width(2.dp))
+                        Text("Add", style = MaterialTheme.typography.labelSmall)
                     }
-                    IconButton(onClick = onClear, modifier = Modifier.size(20.dp)) {
-                        Icon(Icons.Default.Close, "Remove", modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.error)
-                    }
-                }
-            } else {
-                TextButton(onClick = onAssign, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
-                    Icon(Icons.Default.Add, null, Modifier.size(14.dp))
-                    Spacer(Modifier.width(2.dp))
-                    Text("Add", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

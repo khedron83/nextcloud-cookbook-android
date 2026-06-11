@@ -68,6 +68,8 @@ class MealPlannerViewModel @Inject constructor(
         }
     }
 
+    fun thumbnailUrl(recipeId: Int): String? = repository.thumbnailUrl(recipeId)
+
     private fun currentWeekMonday(): LocalDate =
         LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 }

@@ -28,6 +28,11 @@ data class NutritionDto(
     val unsaturatedFatContent: String? = null,
 )
 
+data class AggregateRatingDto(
+    val ratingValue: String? = null,
+    val ratingCount: String? = null,
+)
+
 data class RecipeDto(
     val id: Int? = null,
     val name: String? = null,
@@ -46,6 +51,7 @@ data class RecipeDto(
     val nutrition: NutritionDto? = null,
     val dateCreated: String? = null,
     val dateModified: String? = null,
+    val aggregateRating: AggregateRatingDto? = null,
 )
 
 data class CategoryDto(

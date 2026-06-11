@@ -45,6 +45,7 @@ data class Recipe(
     val nutrition: Nutrition? = null,
     val dateCreated: String = "",
     val dateModified: String = "",
+    val rating: Int = 0,
 )
 
 fun RecipeSummaryDto.toDomain() = RecipeSummary(
@@ -68,6 +69,11 @@ fun RecipeDto.toDomain(): Recipe {
         is String -> t.split(",").map { it.trim() }.filter { it.isNotBlank() }
         else -> emptyList()
     }
+    val rating = aggregateRating?.ratingValue
+        ?.toFloatOrNull()
+        ?.toInt()
+        ?.coerceIn(0, 5) ?: 0
+
     return Recipe(
         id = id,
         name = name ?: "",
@@ -86,6 +92,7 @@ fun RecipeDto.toDomain(): Recipe {
         nutrition = nutrition?.toDomain(),
         dateCreated = dateCreated ?: "",
         dateModified = dateModified ?: "",
+        rating = rating,
     )
 }
 
@@ -121,6 +128,11 @@ fun Recipe.toApiMap(): Map<String, Any?> = buildMap {
     put("recipeIngredient", recipeIngredient)
     put("recipeInstructions", recipeInstructions.map { mapOf("@type" to "HowToStep", "text" to it) })
     put("tool", tools)
+    if (rating > 0) put("aggregateRating", mapOf(
+        "@type" to "AggregateRating",
+        "ratingValue" to rating.toString(),
+        "ratingCount" to "1",
+    ))
     if (nutrition != null) {
         put("nutrition", mapOf(
             "@type" to "NutritionInformation",

@@ -26,6 +26,12 @@ class NetworkClient @Inject constructor(
         return cachedApi!!
     }
 
+    fun cachedThumbnailUrl(id: Int): String? {
+        val config = cachedConfig ?: return null
+        if (config.serverUrl.isBlank()) return null
+        return "${config.serverUrl.trimEnd('/')}/index.php/apps/cookbook/api/v1/recipes/$id/image?size=thumb"
+    }
+
     private fun buildApi(config: ServerConfig): CookbookApi {
         val baseUrl = config.serverUrl.trimEnd('/') + "/index.php/apps/cookbook/"
         val safeBase = if (baseUrl.startsWith("http")) baseUrl else "https://unconfigured.invalid/"

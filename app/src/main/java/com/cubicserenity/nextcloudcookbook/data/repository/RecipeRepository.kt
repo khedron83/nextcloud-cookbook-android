@@ -142,6 +142,8 @@ class RecipeRepository @Inject constructor(
         webDav.saveMealPlan(all)
     }
 
+    fun thumbnailUrl(id: Int): String? = network.cachedThumbnailUrl(id)
+
     suspend fun getIngredients(id: Int): List<String> {
         return try {
             api().getRecipe(id).recipeIngredient?.filterNotNull() ?: emptyList()

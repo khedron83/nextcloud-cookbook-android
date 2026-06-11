@@ -31,6 +31,7 @@ data class EditUiState(
     val instructions: List<String> = emptyList(),
     val tools: List<String> = emptyList(),
     val nutrition: Nutrition = Nutrition(),
+    val rating: Int = 0,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
@@ -69,6 +70,7 @@ class RecipeEditViewModel @Inject constructor(
                         instructions = recipe.recipeInstructions,
                         tools = recipe.tools,
                         nutrition = recipe.nutrition ?: Nutrition(),
+                        rating = recipe.rating,
                         isLoading = false,
                     )
                 }
@@ -157,6 +159,7 @@ class RecipeEditViewModel @Inject constructor(
                     recipeInstructions = s.instructions.filter { it.isNotBlank() },
                     tools = s.tools.filter { it.isNotBlank() },
                     nutrition = s.nutrition,
+                    rating = s.rating,
                 )
                 val saved = if (s.id == null) repository.createRecipe(recipe) else repository.updateRecipe(recipe)
                 _state.update { it.copy(isSaving = false) }

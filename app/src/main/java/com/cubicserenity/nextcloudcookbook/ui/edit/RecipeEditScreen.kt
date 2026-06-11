@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -118,6 +119,33 @@ fun RecipeEditScreen(
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                     )
+                }
+            }
+
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Rating:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.alignByBaseline())
+                    Spacer(Modifier.width(4.dp))
+                    repeat(5) { i ->
+                        val filled = i < state.rating
+                        IconButton(
+                            onClick = { viewModel.update { copy(rating = if (rating == i + 1) 0 else i + 1) } },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = if (filled) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = "${i + 1} star",
+                                tint = if (filled) Color(0xFFFFC107) else MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(24.dp),
+                            )
+                        }
+                    }
+                    if (state.rating > 0) {
+                        TextButton(
+                            onClick = { viewModel.update { copy(rating = 0) } },
+                            contentPadding = PaddingValues(horizontal = 4.dp),
+                        ) { Text("Clear", style = MaterialTheme.typography.labelSmall) }
+                    }
                 }
             }
 
