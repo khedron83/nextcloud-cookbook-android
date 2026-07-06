@@ -2,6 +2,7 @@ package com.cubicserenity.nextcloudcookbook.ui.mealplanner
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
@@ -192,8 +193,14 @@ private fun RecipePickerDialog(
     onDismiss: () -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    val filtered = remember(query, recipes) {
-        if (query.isBlank()) recipes else recipes.filter { query.lowercase() in it.name.lowercase() }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    val categories = remember(recipes) {
+        recipes.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
+    }
+    val filtered = remember(query, selectedCategory, recipes) {
+        recipes
+            .let { list -> if (selectedCategory != null) list.filter { it.category == selectedCategory } else list }
+            .let { list -> if (query.isBlank()) list else list.filter { query.lowercase() in it.name.lowercase() } }
     }
 
     AlertDialog(
@@ -209,6 +216,28 @@ private fun RecipePickerDialog(
                     singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, null) },
                 )
+                if (categories.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp),
+                    ) {
+                        item {
+                            FilterChip(
+                                selected = selectedCategory == null,
+                                onClick = { selectedCategory = null },
+                                label = { Text("All") },
+                            )
+                        }
+                        items(categories) { cat ->
+                            FilterChip(
+                                selected = selectedCategory == cat,
+                                onClick = { selectedCategory = if (selectedCategory == cat) null else cat },
+                                label = { Text(cat) },
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.height(300.dp)) {
                     items(filtered, key = { it.id }) { r ->
